@@ -40,7 +40,7 @@ class Create_files:
         subj = self.format_text(self.check_if_empty(self.__elem[4].text)).split()
         body = self.format_text(self.check_if_empty(self.__elem[7].text)).split()
         max_length = max(len(subj),len(body))
-        output = open('terms.txt','a')
+        output = open('../Phase_2/terms.txt','a')
         for item in range(max_length):
             if item < len(subj):
                 subj_txt = subj[item]
@@ -59,7 +59,7 @@ class Create_files:
         cc = self.check_if_empty(self.__elem[5].text).split()
         bcc = self.check_if_empty(self.__elem[6].text).split()
         max_length = max(len(from_mail),len(to),len(cc),len(bcc))
-        output = open('emails.txt','a')
+        output = open('../Phase_2/emails.txt','a')
         for item in range(max_length):
             if len(from_mail) > item and from_mail[item] != '':
                 output.write('from-{}:{}\n'.format(from_mail[item].replace(',','').lower(),self.__elem[0].text))
@@ -72,12 +72,12 @@ class Create_files:
         output.close()
     def dates(self):
         #this will create dates.txt
-        output = open('dates.txt','a')
+        output = open('../Phase_2/dates.txt','a')
         output.write('{}:{}\n'.format(self.__elem[1].text,self.__elem[0].text))
         output.close()
     def recs(self):
         #this will create recs.txt
-        output = open('recs.txt','a')
+        output = open('../Phase_2/recs.txt','a')
         output.write('{}:<mail><row>{}</row><date>{}</date><from>{}</from><to>{}</to><subj>{}</subj><cc>{}</cc><bcc>{}</bcc><body>{}</body></mail>\n'\
             .format(self.__elem[0].text,self.__elem[0].text,self.__elem[1].text,self.__elem[2].text,self.__elem[3].text,\
                 self.convert_to_xml(self.__elem[4].text),self.convert_to_xml(self.__elem[5].text),self.convert_to_xml(self.__elem[6].text),self.convert_to_xml(self.__elem[7].text)))
