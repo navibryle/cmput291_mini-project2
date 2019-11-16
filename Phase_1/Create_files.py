@@ -18,7 +18,6 @@ class Create_files:
             self.recs()
     #========HELPER METHODS====================================================================================
     @staticmethod
-    #
     def format_text(txt):
         return txt.replace('&',' ').replace(',',' ').replace('.',' ').replace('<',' ').replace('>',' ')\
                 .replace("'" ,' ').replace('"',' ').replace(':',' ').replace(';',' ').replace('/',' ')\
@@ -80,7 +79,7 @@ class Create_files:
         output = open('../Phase_2/recs.txt','a')
         output.write('{}:<mail><row>{}</row><date>{}</date><from>{}</from><to>{}</to><subj>{}</subj><cc>{}</cc><bcc>{}</bcc><body>{}</body></mail>\n'\
             .format(self.__elem[0].text,self.__elem[0].text,self.__elem[1].text,self.__elem[2].text,self.__elem[3].text,\
-                self.convert_to_xml(self.__elem[4].text),self.convert_to_xml(self.__elem[5].text),self.convert_to_xml(self.__elem[6].text),self.convert_to_xml(self.__elem[7].text)))
+                self.convert_to_xml(self.__elem[4].text),self.check_if_empty(self.__elem[5].text),self.check_if_empty(self.__elem[6].text),self.convert_to_xml(self.__elem[7].text)))
         output.close()
 x = Create_files(sys.argv[1])
 x.create_file()
