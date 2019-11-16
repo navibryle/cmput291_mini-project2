@@ -8,13 +8,10 @@ import sys
 class Create_indexes:
     #This class requires that dates.txt,emails.txt,recs.txt, and terms.txt exist
     def __init__(self):
-        try:
-            self.__terms = open('terms.txt')
-            self.__emails = open('emails.txt')
-            self.__dates = open('dates.txt')
-            self.__recs = open('recs.txt')
-        except:
-            sys.exit("Create_indexes.py was not able to open at least one of terms.txt,emails.txt,dates.txt, and recs.txt")
+        self.__terms = 'terms.txt'
+        self.__emails = 'emails.txt'
+        self.__dates = 'dates.txt'
+        self.__recs = 'recs.txt'
     def sort_files(self):
         os.system('sort -u {}'.format(self.__terms))
         os.system('sort -u {}'.format(self.__emails))
