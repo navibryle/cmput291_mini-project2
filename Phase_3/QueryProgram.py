@@ -348,12 +348,12 @@ class QueryProgram:
                     index += 1
 
 
-            print(arguments)
-            print(__argStatus)
-            #if __argStatus:
+            #print(arguments)
+            #print(__argStatus)
+            if __argStatus:
                 # arguments are correctly formatted, perform various queries here
                 # other wise return to loop and request a new command
-                #ParseQueries(arguments)
+                ParseQueries(arguments)
 
     def ParseQueries(self, arguments):
         # perform various queries here, based on arguments
@@ -361,16 +361,73 @@ class QueryProgram:
         # check if an exact match or partial match (%)
         # term searches vs keywords
 
+        # determine output format ('full' or 'brief')
+        for arg in arguments:
+            if (len(arg) == 3 and arg[0] == "ouput" and arg[1] == "="):
+                # user wants to change the output format
+                if (arg[2] == "full"):
+                    __currentOutputFormat = OutputArgsEnum.full
+                elif (arg[2] == "brief"):
+                    __currentOutputFormat = OutputArgsEnum.brief
+                else:
+                    # invalid format argument specified, keep previous format
+                    print("invalid format type specified, please use either brief or full: {0}").format(arg[2])
+
 
 
         if (__currentOutputFormat == OutputArgsEnum.brief):
             # return all records in a brief format (id and title only)
-            #EvaluateArgumentsBriefFormat(arguments)
+            EvaluateArgumentsBriefFormat(arguments)
             pass
         elif (__currentOutputFormat == OutputArgsEnum.full):
             # return all records in full format
-            #EvaluateArgumentsFullFormat(arguments)
+            EvaluateArgumentsFullFormat(arguments)
             pass
         else:
             print("output format is not correct")
+
+
+
+
+    def EvaluateArgumentsBriefFormat(self, arguments):
+        # print out arguments in brief format
+        # paramter: arguments is a list of tuple of two possible formats below [(argument), (argument), (argument), ... , (argument)]
+        # (1) argument = (search term)
+        # (2) argument = (keyword, operator, value) eg. (bcc, :, brian@gmail.com)
+        for arg in arguments:
+            if (len(arg) == 1):
+                # argument is a search term:::    argument = (search term)
+                searchTerm = arg[0]
+                #--------------------Perform search term operation on database below------------------------------#
+
+            elif (len(arg) == 3):
+                # argument is a search term:::    argument = (keyword, operator, value)
+                keyWord = arg[0]
+                operator = arg[1]
+                value = arg[2]
+                #--------------------Perform query operation on database below------------------------------#
+
+            else:
+                print("argument has too few or too many indices: argument = {0}").format(arg)
+    
+    def EvaluateArgumentsFullFormat(self, arguments):
+        # print out arguments in full format
+        # paramter: arguments is a list of tuple of two possible formats below [(argument), (argument), (argument), ... , (argument)]
+        # (1) argument = (search term)
+        # (2) argument = (keyword, operator, value) eg. (bcc, :, brian@gmail.com)
+        for arg in arguments:
+            if (len(arg) == 1):
+                # argument is a search term:::    argument = (search term)
+                searchTerm = arg[0]
+                #--------------------Perform search term operation on database below------------------------------#
+
+            elif (len(arg) == 3):
+                # argument is a search term:::    argument = (keyword, operator, value)
+                keyWord = arg[0]
+                operator = arg[1]
+                value = arg[2]
+                #--------------------Perform query operation on database below------------------------------#
+
+            else:
+                print("argument has too few or too many indices: argument = {0}").format(arg)
 
