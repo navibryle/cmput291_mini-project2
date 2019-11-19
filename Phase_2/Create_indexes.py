@@ -21,10 +21,10 @@ class Create_indexes:
     def create_indexes(self):
         #This method will call all the methods below which will create the index files
         self.sort_files()
-        self.tree_index('te.idx',self.__terms)
-        self.tree_index('em.idx',self.__emails)
-        self.tree_index('da.idx',self.__dates)
-        self.hash_index('re.idx',self.__recs)
+        self.tree_index('../Phase_3/te.idx',self.__terms)
+        self.tree_index('../Phase_3/em.idx',self.__emails)
+        self.tree_index('../Phase_3/da.idx',self.__dates)
+        self.hash_index('../Phase_3/re.idx',self.__recs)
     def tree_index(self,output_filename,input_filename):
         database = db.DB()
         database.open(output_filename,None,db.DB_BTREE, db.DB_CREATE)

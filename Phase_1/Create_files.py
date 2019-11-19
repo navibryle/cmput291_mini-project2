@@ -19,10 +19,16 @@ class Create_files:
     #========HELPER METHODS====================================================================================
     @staticmethod
     def format_text(txt):
+        '''
         return txt.replace('&',' ').replace(',',' ').replace('.',' ').replace('<',' ').replace('>',' ')\
                 .replace("'" ,' ').replace('"',' ').replace(':',' ').replace(';',' ').replace('/',' ')\
                     .replace('?',' ').replace("!",' ').replace('|',' ').replace("\\",' ').replace('(',' ').replace(')','')\
                         .replace('%',' ').replace('=',' ').replace('$',' ').replace('+',' ').lower()
+        '''
+        for item in txt:
+            if item not in ' -_' and not(item.isalnum()):
+                txt = txt.replace(item,' ')
+        return txt
     @staticmethod
     def check_if_empty(txt):
         if  txt == None: return ''
