@@ -19,12 +19,6 @@ class Create_files:
     #========HELPER METHODS====================================================================================
     @staticmethod
     def format_text(txt):
-        '''
-        return txt.replace('&',' ').replace(',',' ').replace('.',' ').replace('<',' ').replace('>',' ')\
-                .replace("'" ,' ').replace('"',' ').replace(':',' ').replace(';',' ').replace('/',' ')\
-                    .replace('?',' ').replace("!",' ').replace('|',' ').replace("\\",' ').replace('(',' ').replace(')','')\
-                        .replace('%',' ').replace('=',' ').replace('$',' ').replace('+',' ').lower()
-        '''
         for item in txt:
             if item not in ' -_' and not(item.isalnum()):
                 txt = txt.replace(item,' ')

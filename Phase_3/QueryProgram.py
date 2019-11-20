@@ -385,10 +385,6 @@ class QueryProgram:
             pass
         else:
             print("output format is not correct")
-
-
-
-
     def EvaluateArgumentsBriefFormat(self, arguments):
         # print out arguments in brief format
         # paramter: arguments is a list of tuple of two possible formats below [(argument), (argument), (argument), ... , (argument)]

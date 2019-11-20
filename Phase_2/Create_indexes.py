@@ -1,6 +1,5 @@
 import os
 import sys
-from bsddb3 import db 
 #hash index for recs
 #B+ tree for terms
 #B+ tree for emails
@@ -14,39 +13,9 @@ class Create_indexes:
         self.__dates = 'dates.txt'
         self.__recs = 'recs.txt'
     def sort_files(self):
-        os.system('sort -u {}'.format(self.__terms))
-        os.system('sort -u {}'.format(self.__emails))
-        os.system('sort -u {}'.format(self.__emails))
-        os.system('sort -u {}'.format(self.__recs))
-    def create_indexes(self):
-        #This method will call all the methods below which will create the index files
-        self.sort_files()
-        self.tree_index('../Phase_3/te.idx',self.__terms)
-        self.tree_index('../Phase_3/em.idx',self.__emails)
-        self.tree_index('../Phase_3/da.idx',self.__dates)
-        self.hash_index('../Phase_3/re.idx',self.__recs)
-    def tree_index(self,output_filename,input_filename):
-        database = db.DB()
-        database.open(output_filename,None,db.DB_BTREE, db.DB_CREATE)
-        tree_file = open(input_filename)
-        tree_line = tree_file.readline()
-        while tree_line != '':
-            cut_off = tree_line.index(':')
-            database.put(tree_line[:cut_off].encode('utf-8'),tree_line[cut_off+1:].strip())
-            tree_line = tree_file.readline()
-        tree_file.close()
-        database.close()
-        return 
-    def hash_index(self,output_filename,input_filename):
-        database = db.DB()
-        database.open(output_filename,None,db.DB_HASH, db.DB_CREATE)
-        hash_file = open(input_filename)
-        hash_line = hash_file.readline()
-        while hash_line != '':
-            cut_off = hash_line.index(':')
-            database.put(hash_line[:cut_off].encode('utf-8'),hash_line[cut_off+1:].strip())
-            hash_line = hash_file.readline()
-        hash_file.close()
-        database.close()
+        os.system('sort {}| uniq|python3 re_format.py|db_load -T -t btree ../Phase_3/te.idx'.format(self.__terms))
+        os.system('sort {}| uniq|python3 re_format.py|db_load -T -t btree ../Phase_3/em.idx'.format(self.__emails))
+        os.system('sort {}| uniq|python3 re_format.py|db_load -T -t btree ../Phase_3/da.idx'.format(self.__dates))
+        os.system('sort {}| uniq|python3 re_format.py|db_load -T -t hash ../Phase_3/re.idx'.format(self.__recs))
 x = Create_indexes()
-x.create_indexes()
+x.sort_files()
