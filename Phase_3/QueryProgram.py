@@ -18,6 +18,7 @@ class QueryProgram:
         self.__terms_result = set()
         self.__emails_result = set()
         self.__dates_result = set()
+        self.__result = set()
     def open_db(self,dbname):
         self.__db = db.DB()
         self.__db.open(dbname)
@@ -36,9 +37,10 @@ class QueryProgram:
                 self.get_query()
                 self.term_search()
                 self.email_search()
-                print(self.__emails)
-                print(self.__terms_result)
-                print(self.__emails_result)
+                self.search_date()
+                print('terms',self.__terms_result)
+                print('date',self.__dates_result)
+                print('email',self.__emails_result)
             inp = input("Enter another query (Y/N): ").upper()
     def email_search(self):
             #this will use self.__emails which contains the tag and the email that were requested by the query
@@ -60,7 +62,7 @@ class QueryProgram:
         query = input("Enter query: ").strip().lower()
         cur_char = 0#pointer to chracters of query
         last_word = None#pointer to where the previous character before the space was
-        operator = [':','<','=','<=','>=']
+        operator = [':','>','<','=','<=','>=']
         cur_word = ''
         tag = ''
         oper = ''
@@ -69,16 +71,16 @@ class QueryProgram:
             if query[cur_char] == ' ' and query[cur_char+1] == ' ':
                 cur_char += 1
             elif query[cur_char] == ' ' and (query[cur_char+1] in operator or query[cur_char+1]+query[cur_char+2] in operator):
-                if query[cur_char+1] in operator:
+                if query[cur_char+1]+query[cur_char+2] in operator:
+                    cur_word += query[cur_char+1]+query[cur_char+2]
+                    last_word = query[cur_char+1]+query[cur_char+2]
+                    cur_char += 3
+                elif query[cur_char+1] in operator:
                     tag = cur_word
                     oper = query[cur_char+1]
                     cur_word += query[cur_char+1]
                     last_word = query[cur_char+1]
                     cur_char+=2
-                elif query[cur_char+1]+query[cur_char+2] in operator:
-                    cur_word += query[cur_char+1]+query[cur_char+2]
-                    last_word = query[cur_char+1]+query[cur_char+2]
-                    cur_char += 3
             elif cur_char == len(query)-1 or (query[cur_char] == ' ' and query[cur_char+1] != ' ' and (last_word not in operator)):
                 #if here we completed formatting a query therefore we have the ability to add a space
                 #also tag and oper mustve been completed, meaning we have an xml tag and an operator 
@@ -92,9 +94,11 @@ class QueryProgram:
                     self.__output_type = 'full'
                     cur_word = ''
                 else:
-                    if oper == '' and tag == '':
+                    if oper == '' and tag == '':#This is the case when there were no uneccessary spaces in query
                         oper = [item for item in operator if item in cur_word]
-                        if oper == []: oper =''
+                        if oper == []:#query is just a stand alone term
+                            oper =''
+                        else:oper = oper[-1]#get the last elemt since '<=' and '>=' are last on the list
                         tag = cur_word[:cur_word.index(oper)]
                     data = cur_word.replace(tag,'').replace(oper,'')
                     self.distribute_query(tag,oper,data)
@@ -176,24 +180,53 @@ class QueryProgram:
                     result = self.__curr.next()
                 return 1#to increment the outside pointer to body list
             else:return 1#term does not exist therefore no increment
-        def search_date(self):
-            #this will use self.__dates and have a different query for each operator
-            operator = [':','<','>','<=','>=']
-            self.open_db('da.idx')
-            for item in self.__dates:
-                date_op = [oper for oper in operator if oper in item]
-                date = item.split(date_op[0])[1]#split on the operator and keep only the word preceeding the operator
-                (self.find_date(date,date_op))#concatenate list
-        def find_date(self,date,date_op,email_set):
-            result = self.__curr.set_range(date.encode('utf-8'))
-            if ':' in date_op or '=' in date_op:
-                result = self.__curr.set(date.encode('utf-8'))
-                if result != None:
-                    email_set.add(result[1].decode('utf-8'))
-            if '<' in date_op:
-                if '=' in date_op:
-                    pass
-                
+    def search_date(self):
+        #this will use self.__dates and have a different query for each operator
+        #this query will utilize the rows that terms and emails have already gathered
+        operator = [':','<','>','<=','>=']
+        self.open_db('da.idx')
+        print(self.__dates)
+        for item in self.__dates:
+            date_op = [oper for oper in operator if oper in item][-1]
+            date = item.split(date_op[0])[1]#split on the operator and keep only the word preceeding the operator
+            print(date_op)
+            print(date)
+            (self.find_date(date,date_op))#concatenate list
+        self.close_db()
+    def find_date(self,date,date_op):
+
+        result = self.__curr.set_range(date.encode('utf-8'))
+        if ':' in date_op or '=' in date_op:
+            result = self.__curr.set(date.encode('utf-8'))
+            if result != None:
+                self.__dates_result.add(result[1].decode('utf-8'))
+            result = self.__curr.next()
+            while result != None and result[0].decode('utf-8') == date:
+                self.__dates_result.add(result[1])
+                result = self.__curr.next()
+        if '<' in date_op:
+            if '=' in date_op:
+                result = self.__curr.prev()
+                while result != None:
+                    self.__dates_result.add(result[1].decode('utf-8'))
+                    result = self.__curr.prev()
+            else:
+                self.__curr.set(date.encode('utf-8'))
+                if result != None:result = self.__curr.prev()
+                while result != None:
+                    self.__dates_result.add(result[1].decode('utf-8'))
+                    result = self.__curr.prev()
+        elif '>' in date_op:
+            if '=' in date_op:
+                while result != None:
+                    self.__dates_result.add(result[1].decode('utf-8'))
+                    result = self.__curr.next()
+            else:
+                self.__curr.set(date.encode('utf-8'))
+                if result != None:result = self.__curr.next()
+                while result != None:
+                    self.__dates_result.add(result[1].decode('utf-8'))
+                    result = self.__curr.next()        
     ''' 
     def EvaluateArgumentsFullFormat(self, arguments):
         # print out arguments in full format
