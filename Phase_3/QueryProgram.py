@@ -93,7 +93,8 @@ class QueryProgram:
                     cur_word = ''
                 else:
                     if oper == '' and tag == '':
-                        oper = [item for item in operator if item in cur_word][0]
+                        oper = [item for item in operator if item in cur_word]
+                        if oper == []: oper =''
                         tag = cur_word[:cur_word.index(oper)]
                     data = cur_word.replace(tag,'').replace(oper,'')
                     self.distribute_query(tag,oper,data)
