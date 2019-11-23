@@ -1,4 +1,4 @@
-import bsddb3 as db
+from bsddb3 import db
 class OutputArgsEnum:
     full = "full"
     brief = "brief" # only print out (id) and (title)
@@ -32,10 +32,7 @@ class QueryProgram:
                 continue
             else:
                 self.get_query()
-                if self.__output_type == 'brief':
-                    print('brief format')
-                else:
-                    print('full format')
+                self.term_search()
             inp = input("Enter another query (Y/N): ").upper()
     def get_query(self):
         #This is a string traversal algorithm that takes out extraneous spaces
@@ -100,6 +97,10 @@ class QueryProgram:
             self.__terms.append(tag+oper+data)
             sorted(self.__terms)
     def term_search(self):
+        '''
+        term_search will break down self.__terms, which contains all the terms that need to be found into terms that are kept in subject and body fields
+        a list is also made for terms that dont have any tag to initilize where the term is located.
+        '''
         self.__terms = list(set(self.__terms))#remove duplicates
         subj = []
         body = []
@@ -112,29 +113,72 @@ class QueryProgram:
                     body.append(item[item.index(':')+1:])
             else:
                 both.append(item)
-        self.open_db('Phase_3/te.idx')
-        max_length = len(subj)+len(body)+len(both))
+        self.open_db('te.idx')
+        max_length = len(subj)+len(body)+len(both)
         pointer = 0
         subj_point = 0
-        body_points = 0
+        body_point = 0
         both_point = 0
-        sum_point = subj_point+body_points+both_point
-        if body[0] < both[0]:#since these lists are sorted either 'body' or 'both' has the smallest term therefore we start search there.
-            start = 'body'
+        row_result = [] 
+        while subj_point+body_point+both_point < max_length:#if sum point == max_length then searches have been performed on all possible terms
+            while body_point < len(body):
+                if (both_point < len(both) and body[body_point] <= both[both_point]) or both_point >= len(both):
+                    #when both_point >= len(both it means that both has been iterated through entirely)
+                    body_point += self.find_term(body[body_point],row_result,'b-')
+                elif both_point < len(both) and body[body_point] > both[both_point]:
+                    both_point += self.find_term(body[body_point],row_result,'b-')
+            while subj_point < len(subj):
+                if (both_point < len(both) and subj[subj_point] <= both[both_point]) or both_point >= len(both):
+                    #when both_point >= len(both it means that both has been iterated through entirely)
+                    subj_point += self.find_term(subj[subj_point],row_result,'b-')
+                elif both_point < len(both) and subj[subj_point] > both[both_point]:
+                    both_point += self.find_term(subj[subj_point],row_result,'b-')
+            while subj_point < len(subj):
+                if (both_point < len(both) and subj[subj_point] <= both[both_point]) or both_point >= len(both):
+                    #when both_point >= len(both it means that both has been iterated through entirely)
+                    subj_point += self.find_term(subj[subj_point],row_result,'b-')
+                elif both_point < len(both) and subj[subj_point] > both[both_point]:
+                    both_point += self.find_term(subj[subj_point],row_result,'b-')
+            while subj_point < len(subj):
+                if (both_point < len(both) and subj[subj_point] <= both[both_point]) or both_point >= len(both):
+                    #when both_point >= len(both it means that both has been iterated through entirely)
+                    subj_point += self.find_term(subj[subj_point],row_result,'b-')
+                elif both_point < len(both) and subj[subj_point] > both[both_point]:
+                    both_point += self.find_term(subj[subj_point],row_result,'b-')
+            while both_point < len(both):
+                if (both_point < len(both)):
+                    #when both_point >= len(both it means that both has been iterated through entirely)
+                    both_point += self.find_term(both[both_point],row_result,'b-')
+            print(row_result)
+    def find_term(self,term,row_result,tag = ''):
+        #result[0] is the key and result[1] is the data
+        #row_result will be mutated if terms are in the database
+        term = tag+term#tag is the prefix to every term in the idx file i.e 's-' or 'b-'
+        #a tag is also added to terms that are not initialized by a tag so that the cursor does not iterate the entire database
+        pointer_increment = 0#number of times to increment the pointer
+        if '%' in term:
+            result = self.__curr.set_range(term.encode('utf-8'))
+            if result != None:
+                row_result.append(result[1].decode('utf-8'))
+                result = self.__curr.next()
+                while term in result[0].decode('utf-8'):#this while loop is to check duplicates since db is sorted therefore same terms will be next to each other
+                    row_result.append(result[1].decode('utf-8'))
+                    result = self.__curr.next()
+                return 1#to increment the outside pointer to body list
+            else:return 1#term does not exist therefore no increment
         else:
-            start = 'both'
-        while sum_point < max_length:
-            if pointer < len(body):
-                
-    def iterDB(self,a_list,keyword,searchTerm):
-        #parameter: keyword is a single letter representing xml tags
-        #this function will mutate a_list
-        keywordBytes = keyword+'-'+searchTerm
-        result = self._curr.set_range(keywordBytes.encode('utf-8'))
-        while result != None and keywordBytes in result[0].decode('utf-8') :#query results arent empty and index key is the same as keywordBytes
-            a_list.append(result[1].decode('utf-8'))
-            self.__curr.next()
-    '''
+            result = self.__curr.set(term.encode('utf-8'))
+            if result != None:# if result==None term does not exist
+                row_result.append(result[1].decode('utf-8'))
+                result = self.__curr.next()
+                while term == result[0].decode('utf-8'):#this while loop is to check duplicates since db is sorted therefore same terms will be next to each other
+                    row_result.append(result[1].decode('utf-8'))
+                    result = self.__curr.next()
+                return 1#to increment the outside pointer to body list
+            else:return 1#term does not exist therefore no increment
+        def execute_query(self):
+            self.term_search()
+    ''' 
     def EvaluateArgumentsFullFormat(self, arguments):
         # print out arguments in full format
         # paramter: arguments is a list of tuple of two possible formats below [(argument), (argument), (argument), ... , (argument)]
