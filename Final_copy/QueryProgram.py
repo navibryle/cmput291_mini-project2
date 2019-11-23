@@ -38,24 +38,15 @@ class QueryProgram:
                 self.term_search()
                 self.email_search()
                 self.search_date()
-                print('terms',self.__terms_result)
-                print('date',self.__dates_result)
-                print('email',self.__emails_result)
+                self.output_query()
+            self.__terms = []#all terms that are to be queried
+            self.__emails = []#all emails that are to be queried
+            self.__dates = []#all dates that are to be quered
+            self.__terms_result = set()
+            self.__emails_result = set()
+            self.__dates_result = set()
+            self.__result = set()
             inp = input("Enter another query (Y/N): ").upper()
-    def email_search(self):
-            #this will use self.__emails which contains the tag and the email that were requested by the query
-            #self.__emails is sorted therefore the cursor will only iterate the database once.
-            self.open_db('em.idx')
-            for item in self.__emails:
-                email = item.replace(':','-')
-                result = (self.__curr.set(email.encode('utf-8')))
-                self.__emails_result.add(result[1].decode('utf-8'))
-                if result != None:
-                    self.__dates_result.add(result[1].decode('utf-8'))
-                    result = self.__curr.next()
-                    while result[0].decode('utf-8') == email:
-                        self.__emails_result.add(result[1].decode('utf-8'))
-            self.close_db()
     def get_query(self):
         #This is a string traversal algorithm that takes out extraneous spaces
         #it also distributes queries onti terms,dates, or emails
@@ -185,12 +176,9 @@ class QueryProgram:
         #this query will utilize the rows that terms and emails have already gathered
         operator = [':','<','>','<=','>=']
         self.open_db('da.idx')
-        print(self.__dates)
         for item in self.__dates:
             date_op = [oper for oper in operator if oper in item][-1]
             date = item.split(date_op[0])[1]#split on the operator and keep only the word preceeding the operator
-            print(date_op)
-            print(date)
             (self.find_date(date,date_op))#concatenate list
         self.close_db()
     def find_date(self,date,date_op):
@@ -226,435 +214,44 @@ class QueryProgram:
                 if result != None:result = self.__curr.next()
                 while result != None:
                     self.__dates_result.add(result[1].decode('utf-8'))
-                    result = self.__curr.next()        
-    ''' 
-    def EvaluateArgumentsFullFormat(self, arguments):
-        # print out arguments in full format
-        # paramter: arguments is a list of tuple of two possible formats below [(argument), (argument), (argument), ... , (argument)]
-        # (1) argument = (search term)
-        # (2) argument = (keyword, operator, value) eg. (bcc, :, brian@gmail.com)
-        print("REEEEEEE")
-        for arg in arguments:
-            if (len(arg) == 1):
-                #subj and body
-                # argument is a search term:::    argument = (search term)
-                searchTerm = arg[0]
-                #--------------------Perform search term operation on database below------------------------------#
-                self.open_db('te.idx')
-                row_id = []
-                output = []
-                self.iterDB(row_id,'s',searchTerm)
-                self.iterDB(row_id,'b',searchTerm)
-                self.close_db()
-                self.open_db('re.idx')
-                for item in row_id:
-                    result = self.__db.get(item.encode('utf-8')).decode('utf-8')
-                    output.append(result)
-                print(output)
-            elif (len(arg) == 3):
-                # argument is a search term:::    argument = (keyword, operator, value)
-                keyWord = arg[0]
-                operator = arg[1]
-                value = arg[2]
-                #--------------------Perform query operation on database below------------------------------#
-
-            else:
-                print("argument has too few or too many indices: argument = {0}").format(arg)
-    def redirect_query(self,command):
-        while True:
-                    command = input("enter a command: ")
-                    command = command.lower()
-                    filteredArguments = command.split(" ")
-                    __argStatus = True
-
-                    # filter out blank spaces
-                    filteredArguments = []
-                    for i in range(len(arguments)):                      
-                        if (i != ""):
-                            filteredArguments.append(arguments[i]) 
-                    # check if one of the arguments specifies a change in format (output=brief or output=full)
-                    # for valid __argStatus, arguments must be in the form
-                    # (1) (search term)
-                    # (2) (keyword, operator, value) eg. (option, =, yep) 
-                    arguments = []
-                    index = 0
-                    previousWord = None
-                    acceptableLetters = set("0123456789abcdefghijklmnopqrstuvwxyz_-%=:><)/")
-                    while index < len(filteredArguments) and QueryProgram.__argStatus:
-                        if (">=" in filteredArguments[index]):
-                            queryArgs = filteredArguments[index].split(">=") # [keyword, value]
-                            if (queryArgs[0] == "" and queryArgs[1] == ""):
-                                # keyword and value missing so use previous word as keyword, next word as value
-                                # check acceptable characters
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                                argumentPair = (previousWord, ">=", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 2
-                            elif (queryArgs[0] == ""):
-                                # keyword is missing, so use previous word
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (previousWord, ">=", queryArgs[1])
-                                arguments.append(argumentPair)
-                                index += 1
-                            elif (queryArgs[1] == ""):
-                                # value that would applied to the keyword is missing, so use next word
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (queryArgs[0], ">=", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                index += 2
-                            else:
-                                # both keyword and value are provided
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (queryArgs[0], ">=", queryArgs[1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 1
-                                
-
-                        elif ("<=" in filteredArguments[index]):
-                            queryArgs = filteredArguments[index].split("<=") # [keyword, value]
-                            if (queryArgs[0] == "" and queryArgs[1] == ""):
-                                # keyword and value missing so use previous word as keyword, next word as value
-                                # check acceptable characters
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (previousWord, "<=", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 2
-                            elif (queryArgs[0] == ""):
-                                # keyword is missing, so use previous word
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (previousWord, "<=", queryArgs[1])
-                                arguments.append(argumentPair)
-                                index += 1
-                            elif (queryArgs[1] == ""):
-                                # value that would applied to the keyword is missing, so use next word
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (queryArgs[0], "<=", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                index += 2
-                            else:
-                                # both keyword and value are provided
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                                    
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                            
-                                argumentPair = (queryArgs[0], "<=", queryArgs[1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 1
-                                
-
-
-                        elif (">" in filteredArguments[index]):
-                            queryArgs = filteredArguments[index].split(">") # [keyword, value]
-                            if (queryArgs[0] == "" and queryArgs[1] == ""):
-                                # keyword and value missing so use previous word as keyword, next word as value
-                                # check acceptable characters
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                            
-                                argumentPair = (previousWord, ">", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 2
-                            elif (queryArgs[0] == ""):
-                                # keyword is missing, so use previous word
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                            
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                                    
-                                argumentPair = (previousWord, ">", queryArgs[1])
-                                arguments.append(argumentPair)
-                                index += 1
-                            elif (queryArgs[1] == ""):
-                                # value that would applied to the keyword is missing, so use next word
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (queryArgs[0], ">", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                index += 2
-                            else:
-                                # both keyword and value are provided
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                            
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                            
-                                argumentPair = (queryArgs[0], ">", queryArgs[1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 1
-                                
-
-                        elif ("<" in filteredArguments[index]):
-                            queryArgs = filteredArguments[index].split("<") # [keyword, value]
-                            if (queryArgs[0] == "" and queryArgs[1] == ""):
-                                # keyword and value missing so use previous word as keyword, next word as value
-                                # check acceptable characters
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                            
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (previousWord, "<", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 2
-                            elif (queryArgs[0] == ""):
-                                # keyword is missing, so use previous word
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                            
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (previousWord, "<", queryArgs[1])
-                                arguments.append(argumentPair)
-                                index += 1
-                            elif (queryArgs[1] == ""):
-                                # value that would applied to the keyword is missing, so use next word
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (queryArgs[0], "<", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                index += 2
-                            else:
-                                # both keyword and value are provided
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                            
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (queryArgs[0], "<", queryArgs[1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 1
-                                
-
-                        elif ("=" in filteredArguments[index]):
-                            queryArgs = filteredArguments[index].split("=") # [keyword, value]
-                            if (queryArgs[0] == "" and queryArgs[1] == ""):
-                                # keyword and value missing so use previous word as keyword, next word as value
-                                # check acceptable characters
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (previousWord, "=", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 2
-                            elif (queryArgs[0] == ""):
-                                # keyword is missing, so use previous word
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                            
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (previousWord, "=", queryArgs[1])
-                                arguments.append(argumentPair)
-                                index += 1
-                            elif (queryArgs[1] == ""):
-                                # value that would applied to the keyword is missing, so use next word
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (queryArgs[0], "=", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                index += 2
-                            else:
-                                # both keyword and value are provided
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                            
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (queryArgs[0], "=", queryArgs[1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 1
-                                
-
-                        elif (":" in filteredArguments[index]):
-                            queryArgs = filteredArguments[index].split(":") # [keyword, value]
-                            if (queryArgs[0] == "" and queryArgs[1] == ""):
-                                # keyword and value missing so use previous word as keyword, next word as value
-                                # check acceptable characters
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (previousWord, ":", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 2
-                            elif (queryArgs[0] == ""):
-                                # keyword is missing, so use previous word
-                                if (any((c not in acceptableLetters) for c in previousWord)):
-                                    __argStatus = False
-                            
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (previousWord, ":", queryArgs[1])
-                                arguments.append(argumentPair)
-                                index += 1
-                            elif (queryArgs[1] == ""):
-                                # value that would applied to the keyword is missing, so use next word
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in filteredArguments[index + 1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (queryArgs[0], ":", filteredArguments[index + 1])
-                                arguments.append(argumentPair)
-                                index += 2
-                            else:
-                                # both keyword and value are provided
-                                if (any((c not in acceptableLetters) for c in queryArgs[0])):
-                                    __argStatus = False
-                                
-                                if (any((c not in acceptableLetters) for c in queryArgs[1])):
-                                    __argStatus = False
-                                
-                                argumentPair = (queryArgs[0], ":", queryArgs[1])
-                                arguments.append(argumentPair)
-                                previousWord = None
-                                index += 1
-                                
-                        else:
-                            # arg is a potential search word or potential keyword
-                            if (previousWord != None):
-                                # arg is a search word
-                                argumentPair = (previousWord,)
-                                arguments.append(argumentPair)
-                            # arg is a keyword
-                            previousWord = filteredArguments[index]
-                            index += 1
-
-
-                    print(arguments)
-                    print(__argStatus,'REEEEEE')
-                    print(QueryProgram.__currentOutputFormat)
-                    if __argStatus:
-                        # arguments are correctly formatted, perform various queries here
-                        # other wise return to loop and request a new command
-                        self.ParseQueries(arguments)
-            def ParseQueries(self, arguments):
-                # perform various queries here, based on arguments
-                # returns to session loop afterwards
-                # check if an exact match or partial match (%)
-                # term searches vs keywords
-
-                # determine output format ('full' or 'brief')
-                for arg in arguments:
-                    if (len(arg) == 3 and arg[0] == "ouput" and arg[1] == "="):
-                        # user wants to change the output format
-                        if (arg[2] == "full"):
-                            QueryProgram.__currentOutputFormat = OutputArgsEnum.full
-                        elif (arg[2] == "brief"):
-                            QueryProgram.__currentOutputFormat = OutputArgsEnum.brief
-                        else:
-                            # invalid format argument specified, keep previous format
-                            print("invalid format type specified, please use either brief or full: {0}").format(arg[2])
-
-
-
-                if (QueryProgram.__currentOutputFormat == OutputArgsEnum.brief):
-                    # return all records in a brief format (id and title only)
-                    self.EvaluateArgumentsBriefFormat(arguments)
-                    pass
-                elif (QueryProgram.__currentOutputFormat == OutputArgsEnum.full):
-                    # return all records in full format
-                    self.EvaluateArgumentsFullFormat(arguments)
-                    pass
+                    result = self.__curr.next()   
+    def email_search(self):
+            #this will use self.__emails which contains the tag and the email that were requested by the query
+            #self.__emails is sorted therefore the cursor will only iterate the database once.
+            self.open_db('em.idx')
+            for item in self.__emails:
+                email = item.replace(':','-')
+                result = (self.__curr.set(email.encode('utf-8')))
+                self.__emails_result.add(result[1].decode('utf-8'))
+                if result != None:
+                    self.__dates_result.add(result[1].decode('utf-8'))
+                    result = self.__curr.next()
+                    while result[0].decode('utf-8') == email:
+                        self.__emails_result.add(result[1].decode('utf-8'))
+            self.close_db()
+    def output_query(self):
+        #This will query recs
+        #and display the output
+        query_lists =[self.__dates_result,self.__emails_result,self.__terms_result]
+        row_query = None
+        for item in query_lists:
+            if len(item) != 0:
+                if row_query == None:
+                    row_query = item
                 else:
-                    print("output format is not correct")
-    def EvaluateArgumentsBriefFormat(self):
-        # print out in brief format
-        # paramter: is a list of tuple of two possible formats below [(argument), (argument), (argument), ... , (argument)]
-        # (1) argument = (search term)
-        # (2) argument = (keyword, operator, value) eg. (bcc, :, brian@gmail.com)
-        print(self.__query)
-        for arg in:
-            if (len(arg) == 1):
-                # argument is a search term:::    argument = (search term)
-                searchTerm = arg[0]
-                #--------------------Perform search term operation on database below------------------------------#
-
-            elif (len(arg) == 3):
-                # argument is a search term:::    argument = (keyword, operator, value)
-                keyWord = arg[0]
-                operator = arg[1]
-                value = arg[2]
-                #--------------------Perform query operation on database below------------------------------#
-
+                    row_query.intersection(item)
+        row_query = sorted(list(row_query))
+        self.open_db('re.idx')
+        print('==========================================OUTPUT==========================================')
+        for item in row_query:
+            result = self.__curr.set(item.encode('utf-8'))
+            if self.__output_type == 'full':
+                print(result[1].decode('utf-8'))
             else:
-                print("argument has too few or too many indices: argument = {0}").format(arg)
-
-                '''
-            
-
+                try:
+                    subj1 = result[1].decode('utf-8').replace('<subj>','{').replace('</subj>','}')
+                    subj = subj1[subj1.index('{')+1:subj1.index('}')]
+                    print('row id:',item,'subject:',subj)
+                except:
+                    None
+        print('==========================================OUTPUT==========================================')
