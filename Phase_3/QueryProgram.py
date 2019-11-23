@@ -47,11 +47,12 @@ class QueryProgram:
             for item in self.__emails:
                 email = item.replace(':','-')
                 result = (self.__curr.set(email.encode('utf-8')))
+                self.__emails_result.add(result[1].decode('utf-8'))
                 if result != None:
                     self.__dates_result.add(result[1].decode('utf-8'))
                     result = self.__curr.next()
                     while result[0].decode('utf-8') == email:
-                        self.__dates_result.add(result[1].decode('utf-8'))
+                        self.__emails_result.add(result[1].decode('utf-8'))
             self.close_db()
     def get_query(self):
         #This is a string traversal algorithm that takes out extraneous spaces
