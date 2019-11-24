@@ -228,7 +228,7 @@ class QueryProgram:
                     result = self.__curr.next()
                     while result[0].decode('utf-8') == email:
                         self.__emails_result.add(result[1].decode('utf-8'))
-                        self.__curr.next()
+                        result = self.__curr.next()
             self.close_db()
     def output_query(self):
         #This will query recs
