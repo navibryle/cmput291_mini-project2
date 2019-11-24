@@ -155,9 +155,10 @@ class QueryProgram:
             term = term.replace('%','')
             result = self.__curr.set_range(term.encode('utf-8'))
             if result != None:
-                self.__terms_result.add(result[1].decode('utf-8'))
+                if result[0].replace(term,'') == term+result[0].replace(term,''):
+                    self.__terms_result.add(result[1].decode('utf-8'))
                 result = self.__curr.next()
-                while term in result[0].decode('utf-8'):#this while loop is to check duplicates since db is sorted therefore same terms will be next to each other
+                while term in result[0].decode('utf-8') and result[0].replace(term,'') == term+result[0].replace(term,''):#this while loop is to check duplicates since db is sorted therefore same terms will be next to each other
                     self.__terms_result.add(result[1].decode('utf-8'))
                     result = self.__curr.next()
                 return 1#to increment the outside pointer to body list
@@ -240,11 +241,11 @@ class QueryProgram:
                 if row_query == None:
                     row_query = item
                 else:
-                    row_query.intersection(item)
-        row_query = sorted(list(row_query))
+                    row_query = row_query.intersection(item)
         self.open_db('re.idx')
         print('==========================================OUTPUT==========================================')
-        if len(row_query) > 0:
+        if row_query != None and len(row_query) > 0:
+            row_query = sorted(list(row_query))
             for item in row_query:
                 result = self.__curr.set(item.encode('utf-8'))
                 if self.__output_type == 'full':
