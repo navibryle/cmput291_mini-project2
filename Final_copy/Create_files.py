@@ -12,7 +12,7 @@ class Create_files:
         line = xml_file.readline()
         while line[:6] == '<mail>':
             #each child node of parent can accesssed by index. 0 = row,1 = date,2 = from,3 = to,4 =subj,5 = cc, 6= bcc,7 = body
-            self.__rec = line.replace('<mail>','').replace('</mail>','').strip()
+            self.__rec = line.replace('<mail>','').replace('</mail>','').replace('{',' ').replace('}',' ').strip()
             self.sep_tags()
             self.terms()
             self.emails()
@@ -26,26 +26,9 @@ class Create_files:
         tag_type = 'open'
         tag = ''
         content = ''
-        while pointer != len(self.__rec):
-            if self.__rec[pointer] == '<' and tag_type == 'open':#starting tag
-                while self.__rec[pointer] != '>':
-                    tag += self.__rec[pointer]
-                    pointer += 1
-                tag += self.__rec[pointer]
-                pointer += 1
-                tag_type = 'close'
-            elif self.__rec[pointer] == '<' and tag_type == 'close':#ending tag
-                while self.__rec[pointer] != '>':
-                    pointer +=1
-                self.__elem[self.__elem.index(tag)] = content 
-                content = ''
-                tag = ''
-                tag_type = 'open'
-            elif tag_type == 'close':#pointer is currently inside a tag
-                content += self.__rec[pointer]
-                pointer += 1
-            else:
-                pointer += 1
+        for item in self.__elem:
+            temp = self.__rec.replace(item,"{").replace(item.replace('<','</'),'}')
+            self.__elem[self.__elem.index(item)] = temp[temp.index('{')+1:temp.index('}')]
     #========HELPER METHODS====================================================================================
     @staticmethod
     def format_text(txt):

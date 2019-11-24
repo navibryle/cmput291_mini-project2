@@ -31,7 +31,7 @@ class QueryProgram:
         while inp != 'N' :
             #This is a string traversal algorithm that takes out extraneous spaces
             if inp != 'Y' and inp != 'N':
-                inp = input('Please enter Y or N: ')
+                inp = input('Please enter Y or N: ').upper()
                 continue
             else:
                 self.get_query()
@@ -184,7 +184,6 @@ class QueryProgram:
             (self.find_date(date,date_op))#concatenate list
         self.close_db()
     def find_date(self,date,date_op):
-
         result = self.__curr.set_range(date.encode('utf-8'))
         if ':' in date_op or '=' in date_op:
             result = self.__curr.set(date.encode('utf-8'))
