@@ -152,6 +152,7 @@ class QueryProgram:
         #a tag is also added to terms that are not initialized by a tag so that the cursor does not iterate the entire database
         pointer_increment = 0#number of times to increment the pointer
         if '%' in term:
+            term = term.replace('%','')
             result = self.__curr.set_range(term.encode('utf-8'))
             if result != None:
                 self.__terms_result.add(result[1].decode('utf-8'))
@@ -222,12 +223,12 @@ class QueryProgram:
             for item in self.__emails:
                 email = item.replace(':','-')
                 result = (self.__curr.set(email.encode('utf-8')))
-                self.__emails_result.add(result[1].decode('utf-8'))
                 if result != None:
-                    self.__dates_result.add(result[1].decode('utf-8'))
+                    self.__emails_result.add(result[1].decode('utf-8'))
                     result = self.__curr.next()
                     while result[0].decode('utf-8') == email:
                         self.__emails_result.add(result[1].decode('utf-8'))
+                        self.__curr.next()
             self.close_db()
     def output_query(self):
         #This will query recs
@@ -243,15 +244,19 @@ class QueryProgram:
         row_query = sorted(list(row_query))
         self.open_db('re.idx')
         print('==========================================OUTPUT==========================================')
-        for item in row_query:
-            result = self.__curr.set(item.encode('utf-8'))
-            if self.__output_type == 'full':
-                print(result[1].decode('utf-8'))
-            else:
-                try:
-                    subj1 = result[1].decode('utf-8').replace('<subj>','{').replace('</subj>','}')
-                    subj = subj1[subj1.index('{')+1:subj1.index('}')]
-                    print('row id:',item,'subject:',subj)
-                except:
-                    None
+        if len(row_query) > 0:
+            for item in row_query:
+                result = self.__curr.set(item.encode('utf-8'))
+                if self.__output_type == 'full':
+                    try:
+                        print(result[1].decode('utf-8'))
+                    except:
+                        None
+                else:
+                    try:
+                        subj1 = result[1].decode('utf-8').replace('<subj>','{').replace('</subj>','}')
+                        subj = subj1[subj1.index('{')+1:subj1.index('}')]
+                        print('row id:',item,'subject:',subj)
+                    except:
+                        None
         print('==========================================OUTPUT==========================================')
