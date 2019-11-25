@@ -61,7 +61,7 @@ class QueryProgram:
         while cur_char < len(query):
             if query[cur_char] == ' ' and query[cur_char+1] == ' ':
                 cur_char += 1
-            elif query[cur_char] == ' ' and (query[cur_char+1] in operator or query[cur_char+1]+query[cur_char+2] in operator):
+            elif cur_char+2 < len(query) and query[cur_char] == ' ' and (query[cur_char+1] in operator or query[cur_char+1]+query[cur_char+2] in operator):
                 if query[cur_char+1]+query[cur_char+2] in operator:
                     cur_word += query[cur_char+1]+query[cur_char+2]
                     last_word = query[cur_char+1]+query[cur_char+2]
@@ -81,9 +81,13 @@ class QueryProgram:
                 if cur_word == 'output=brief':
                     self.__output_type = 'brief'
                     cur_word = ''
+                    oper = ''
+                    tag = ''
                 elif cur_word == 'output=full':
                     self.__output_type = 'full'
                     cur_word = ''
+                    oper = ''
+                    tag = ''
                 else:
                     if oper == '' and tag == '':#This is the case when there were no uneccessary spaces in query
                         oper = [item for item in operator if item in cur_word]
@@ -155,14 +159,14 @@ class QueryProgram:
             term = term.replace('%','')
             result = self.__curr.set_range(term.encode('utf-8'))
             if result != None:
-                if result[0].replace(term,'') == term+result[0].replace(term,''):
+                if result[0].decode('utf-8') == term+(result[0].decode('utf-8')[len(term):]):
                     self.__terms_result.add(result[1].decode('utf-8'))
                 result = self.__curr.next()
-                while term in result[0].decode('utf-8') and result[0].replace(term,'') == term+result[0].replace(term,''):#this while loop is to check duplicates since db is sorted therefore same terms will be next to each other
+                while result[0].decode('utf-8') == term+(result[0].decode('utf-8')[len(term):]):#this while loop is to check duplicates since db is sorted therefore same terms will be next to each other
                     self.__terms_result.add(result[1].decode('utf-8'))
                     result = self.__curr.next()
                 return 1#to increment the outside pointer to body list
-            else:return 1#term does not exist therefore no increment
+            else:return 1#term does not exist therefore no increment.decode('utf-8')
         else:
             result = self.__curr.set(term.encode('utf-8'))
             if result != None:# if result==None term does not exist

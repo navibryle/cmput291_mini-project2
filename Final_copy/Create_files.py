@@ -1,9 +1,12 @@
-import sys
 class Create_files:
     def __init__(self,filename):
         self.__filename = filename
         self.__elem = ['<row>','<date>','<from>','<to>','<subj>','<cc>','<bcc>','<body>']
         self.__rec = None
+        self.__terms = open('terms.txt','a')
+        self.__emails = open('emails.txt','a')
+        self.__dates = open('dates.txt','a')
+        self.__recs = open('recs.txt','a')
     def create_file(self):
         #this function will call the four methods below to create files and will also itreate through the xml doc
         xml_file = open(self.__filename)
@@ -12,84 +15,76 @@ class Create_files:
         line = xml_file.readline()
         while line[:6] == '<mail>':
             #each child node of parent can accesssed by index. 0 = row,1 = date,2 = from,3 = to,4 =subj,5 = cc, 6= bcc,7 = body
-            self.__rec = line.replace('<mail>','').replace('</mail>','').replace('{',' ').replace('}',' ').strip()
+            self.__rec = line[6:-8]
             self.sep_tags()
-            self.terms()
-            self.emails()
-            self.dates()
-            self.recs()
+            self.__dates.write('{}:{}\n'.format(self.__elem[1],self.__elem[0]))
+            self.__recs.write('{}:<mail>{}</mail>\n'.format(self.__elem[0],self.__rec))
             self.__elem = ['<row>','<date>','<from>','<to>','<subj>','<cc>','<bcc>','<body>']
+            self.__rec = None
             line = xml_file.readline()
+        self.__terms.close()
+        self.__emails.close()
+        self.__dates.close()
+        self.__recs.close()
         xml_file.close()
     def sep_tags(self):
+        count = 0
         pointer = 0
-        tag_type = 'open'
-        tag = ''
-        content = ''
         for item in self.__elem:
-            temp = self.__rec.replace(item,"{").replace(item.replace('<','</'),'}')
-            self.__elem[self.__elem.index(item)] = temp[temp.index('{')+1:temp.index('}')]
-    #========HELPER METHODS====================================================================================
-    @staticmethod
-    def format_text(txt):
-        txt = txt.replace('&amp;',' ').replace('&#10;',' ').replace('&lt;',' ').replace('&gt;',' ')\
-            .replace('&apos;',' ').replace('&quot;',' ')
-        for item in txt:
-            if item not in ' -_' and not(item.isalnum()):
-                txt = txt.replace(item,' ')
-        return txt
-    @staticmethod
-    def check_if_empty(txt):
-        if  txt == None: return ''
-        else: return txt
-    @staticmethod
-    def convert_to_xml(txt):
-        if txt == None:return ''
-        else:
-            return 
-    #==========================================================================================================
-    def terms(self):
-        #this method will create terms.txt
-        subj = self.format_text((self.__elem[4])).split()
-        body = self.format_text((self.__elem[7])).split()
-        max_length = max(len(subj),len(body))
-        output = open('terms.txt','a')
-        for item in range(max_length):
-            if item < len(subj):
-                subj_txt = subj[item]
-                if not(len(subj_txt) <= 2):
-                    output.write('s-{}:{}\n'.format(subj_txt.lower(),self.__elem[0]))
-            if item < len(body) :
-                body_txt = body[item]
-                if not(len(body_txt) <= 2):
-                    output.write('b-{}:{}\n'.format(body_txt.lower(),self.__elem[0]))
-        output.close()
-    def emails(self):
-        #this method will create emails.txt
-        #this method will assume that from,to,cc,bcc will only contain emails
-        from_mail = self.__elem[2].split(',')
-        to = self.__elem[3].split(',')
-        cc = self.__elem[5].split(',')
-        bcc = self.__elem[6].split(',')
-        max_length = max(len(from_mail),len(to),len(cc),len(bcc))
-        output = open('emails.txt','a')
-        for item in range(max_length):
-            if len(from_mail) > item and from_mail[item] != '':
-                output.write('from-{}:{}\n'.format(from_mail[item].replace(' ','').lower(),self.__elem[0]))
-            if len(to) > item and to[item] != '':
-                output.write('to-{}:{}\n'.format(to[item].replace(' ','').lower(),self.__elem[0]))
-            if len(cc) > item and cc[item] != '':
-                output.write('cc-{}:{}\n'.format(cc[item].replace(' ','').lower(),self.__elem[0]))
-            if len(bcc) > item and bcc[item] != '':
-                output.write('bcc-{}:{}\n'.format(bcc[item].replace(' ','').lower(),self.__elem[0]))
-        output.close()
-    def dates(self):
-        #this will create dates.txt
-        output = open('dates.txt','a')
-        output.write('{}:{}\n'.format(self.__elem[1],self.__elem[0]))
-        output.close()
-    def recs(self):
-        #this will create recs.txt
-        output = open('recs.txt','a')
-        output.write('{}:<mail>{}</mail>\n'.format(self.__elem[0],self.__rec))
-        output.close()
+            pointer += len(item)
+            output = ''
+            if item == '<subj>' or item =='<body>':
+                while self.__rec[pointer] != '<':
+                    if self.__rec[pointer] == '&':#means this term is to be ignored
+                        while self.__rec[pointer] != ';':#each of the terms to be ignored ends with ;
+                            pointer += 1
+                        pointer += 1
+                        if item == '<subj>' and len(output) > 2: 
+                            self.__terms.write('s-{}:{}\n'.format(output.lower(),self.__elem[0]))
+                            output = ''
+                        elif item == '<body>' and len(output) > 2: 
+                            self.__terms.write('b-{}:{}\n'.format(output.lower(),self.__elem[0]))
+                            output =''
+                        elif len(output) <= 2 : output = ''
+                    elif (self.__rec[pointer] not in '-_' and not(self.__rec[pointer].isalnum())):
+                        if item == '<subj>' and len(output) > 2: 
+                            self.__terms.write('s-{}:{}\n'.format(output.lower(),self.__elem[0]))
+                            output = ''
+                        elif item == '<body>' and len(output) > 2: 
+                            self.__terms.write('b-{}:{}\n'.format(output.lower(),self.__elem[0]))
+                            output = ''
+                        elif len(output) <= 2 : output = ''
+                        pointer += 1
+                    else:
+                        output += self.__rec[pointer]
+                        pointer += 1
+                output = ''
+                pointer += len(item)+1
+            elif item in ['<from>','<to>','<cc>','<bcc>']:
+                while self.__rec[pointer] != '<':
+                    if self.__rec[pointer] == ' ' or self.__rec[pointer] == ',' or self.__rec[pointer+1] == '<':
+                        if self.__rec[pointer+1] == '<':output = output + self.__rec[pointer]
+                        if item== '<from>':
+                            self.__emails.write('from-{}:{}\n'.format(output.lower(),self.__elem[0]))
+                        elif item== '<to>':
+                            self.__emails.write('to-{}:{}\n'.format(output.lower(),self.__elem[0]))
+                        elif item== '<cc>':
+                            self.__emails.write('cc-{}:{}\n'.format(output.lower(),self.__elem[0]))
+                        elif item== '<bcc>':
+                            self.__emails.write('bcc-{}:{}\n'.format(output.lower(),self.__elem[0]))
+                        output = ''
+                        pointer += 1
+                    else:
+                        output += self.__rec[pointer]
+                        pointer += 1
+                pointer += len(item)+1
+            else:
+                while self.__rec[pointer] != '<':
+                    output += self.__rec[pointer]
+                    pointer += 1
+                self.__elem[count] = output
+                output = ''
+                pointer += len(item)+1
+            count += 1
+        
+        
