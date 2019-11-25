@@ -23,10 +23,10 @@ class Create_files:
         xml_file.close()
     def sep_tags(self):
         pointer = 0
-        word_start = 0
         tag_type = 'open'
         tag = ''
         content = ''
+        ignore = ['&amp;','&#10;','&lt;','&gt;','&apos;','&quot;','&#10;']
         while pointer != len(self.__rec):
             if self.__rec[pointer] == '<' and tag_type == 'open':#starting tag
                 while self.__rec[pointer] != '>':
@@ -42,34 +42,41 @@ class Create_files:
                 content = ''
                 tag = ''
                 tag_type = 'open'
+                concat = 'yes'
             elif tag_type == 'close':#pointer is currently inside a tag
-                content += self.__rec[pointer]
-                pointer += 1
+                if tag=='<subj>' or tag=='<body>':
+                    if self.__rec[pointer] not in '-_' and not(self.__rec[pointer].isalnum()):
+                        if self.__rec[pointer] == '&':
+                            temp1 = pointer + 7
+                            word = ''#max length of an element in ignore
+                            while pointer < temp1:
+                                word += self.__rec[pointer]
+                                if temp1 - pointer >= 2:
+                                    if word in ignore:
+                                        concat = 'no'
+                                        break
+                                pointer += 1
+                            if concat == 'yes':
+                                    content += word
+                            else:
+                                content += ' '
+                            concat = 'no'
+                            word = ''
+                        else:
+                            content += ' '
+                            pointer += 1
+                    else:
+                        content += self.__rec[pointer]
+                        pointer += 1
+                else:
+                    content += self.__rec[pointer]
+                    pointer += 1
             else:
                 pointer += 1
-    #========HELPER METHODS====================================================================================
-    @staticmethod
-    def format_text(txt):
-        txt = txt.replace('&amp;',' ').replace('&#10;',' ').replace('&lt;',' ').replace('&gt;',' ')\
-            .replace('&apos;',' ').replace('&quot;',' ')
-        for item in txt:
-            if item not in ' -_' and not(item.isalnum()):
-                txt = txt.replace(item,' ')
-        return txt
-    @staticmethod
-    def check_if_empty(txt):
-        if  txt == None: return ''
-        else: return txt
-    @staticmethod
-    def convert_to_xml(txt):
-        if txt == None:return ''
-        else:
-            return 
-    #==========================================================================================================
     def terms(self):
         #this method will create terms.txt
-        subj = self.format_text((self.__elem[4])).split()
-        body = self.format_text((self.__elem[7])).split()
+        subj = (self.__elem[4]).split()
+        body = (self.__elem[7]).split()
         max_length = max(len(subj),len(body))
         output = open('../Phase_2/terms.txt','a')
         for item in range(max_length):
