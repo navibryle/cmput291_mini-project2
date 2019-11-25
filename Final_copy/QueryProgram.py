@@ -180,45 +180,51 @@ class QueryProgram:
     def search_date(self):
         #this will use self.__dates and have a different query for each operator
         #this query will utilize the rows that terms and emails have already gathered
-        operator = [':','<','>','<=','>=']
+        operator = [':','<','>','=','<=','>=']
         self.open_db('da.idx')
         for item in self.__dates:
             date_op = [oper for oper in operator if oper in item][-1]
+            print(date_op)
             date = item.split(date_op[0])[1]#split on the operator and keep only the word preceeding the operator
             (self.find_date(date,date_op))#concatenate list
         self.close_db()
     def find_date(self,date,date_op):
         result = self.__curr.set_range(date.encode('utf-8'))
-        if ':' in date_op or '=' in date_op:
+        if ':' in date_op or '=' in date_op and ('>' not in date_op):
+            if '=' in date: date = date.replace('=','')
             result = self.__curr.set(date.encode('utf-8'))
             if result != None:
                 self.__dates_result.add(result[1].decode('utf-8'))
             result = self.__curr.next()
             while result != None and result[0].decode('utf-8') == date:
-                self.__dates_result.add(result[1])
+                self.__dates_result.add(result[1].decode('utf-8'))
                 result = self.__curr.next()
         if '<' in date_op:
             if '=' in date_op:
+                if '=' in date: date = date.replace('=','')
                 result = self.__curr.prev()
                 while result != None:
                     self.__dates_result.add(result[1].decode('utf-8'))
                     result = self.__curr.prev()
             else:
-                self.__curr.set(date.encode('utf-8'))
+                result = self.__curr.set(date.encode('utf-8'))
                 if result != None:result = self.__curr.prev()
                 while result != None:
-                    self.__dates_result.add(result[1].decode('utf-8'))
+                    if result[0].decode('utf-8') < date:
+                        self.__dates_result.add(result[1].decode('utf-8'))
                     result = self.__curr.prev()
         elif '>' in date_op:
             if '=' in date_op:
+                if '=' in date: date = date.replace('=','')
                 while result != None:
                     self.__dates_result.add(result[1].decode('utf-8'))
                     result = self.__curr.next()
             else:
-                self.__curr.set(date.encode('utf-8'))
+                result = self.__curr.set(date.encode('utf-8'))
                 if result != None:result = self.__curr.next()
                 while result != None:
-                    self.__dates_result.add(result[1].decode('utf-8'))
+                    if result[0].decode('utf-8') > date :
+                        self.__dates_result.add(result[1].decode('utf-8'))
                     result = self.__curr.next()   
     def email_search(self):
             #this will use self.__emails which contains the tag and the email that were requested by the query
@@ -249,6 +255,7 @@ class QueryProgram:
         print('==========================================OUTPUT==========================================')
         if row_query != None and len(row_query) > 0:
             row_query = sorted(list(row_query))
+            
             for item in row_query:
                 result = self.__curr.set(item.encode('utf-8'))
                 if self.__output_type == 'full':
@@ -258,8 +265,8 @@ class QueryProgram:
                         None
                 else:
                     try:
-                        subj1 = result[1].decode('utf-8').replace('<subj>','{').replace('</subj>','}')
-                        subj = subj1[subj1.index('{')+1:subj1.index('}')]
+                        subj1 = result[1].decode('utf-8')
+                        subj = subj1[subj1.index('<subj>')+6:subj1.index('</subj>')]
                         print('row id:',item,'subject:',subj)
                     except:
                         None

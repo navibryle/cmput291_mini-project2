@@ -1,6 +1,7 @@
 import sys
 for item in sys.stdin:
     item = item.replace('\\','')
-    key_val = item.split(':')
-    sys.stdout.write(key_val[0].strip()+'\n')
-    sys.stdout.write(key_val[1].strip()+'\n')
+    key = item[:item.index(':')]
+    val = item[item.index(':')+1:]
+    sys.stdout.write(key.strip()+'\n')
+    sys.stdout.write(val.strip()+'\n')
